@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="SDSM&amp;T Robotics ODROIDs : Documentation">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>SDSM&amp;T Robotics ODROIDs</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/sdsmt-robotics-odroids">View on GitHub</a>
+
+          <h1 id="project_title">SDSM&amp;T Robotics ODROIDs</h1>
+          <h2 id="project_tagline">Documentation</h2>
+
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="welcome" class="anchor" href="#welcome" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome</h1>
+
+<p>This page contains a collection of information about the ODROID images built for the SDSM&amp;T Robotics Team.</p>
+
+<h2>
+<a id="creating-arm-installation-media" class="anchor" href="#creating-arm-installation-media" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating ARM installation media</h2>
+
+<h3>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prerequisites</h3>
+
+<ol>
+<li>An <code>armv7hl</code> machine running Fedora 21 or later</li>
+<li>Adequate disk space to create the image (at least 2GB, sometimes more)</li>
+<li>Network connection to the <code>smd-odroid</code> package repository</li>
+<li>A target Kickstart file</li>
+<li>The following packages must be installed:
+
+<ul>
+<li><code>anaconda</code></li>
+<li><code>lorax</code></li>
+</ul>
+</li>
+</ol>
+
+<h3>
+<a id="specifications" class="anchor" href="#specifications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Specifications</h3>
+
+<p>Applies to all kickstarts in this repo unless otherwise noted.</p>
+
+<ol>
+<li>No configured swap space</li>
+<li>Single <code>vfat</code> partition of size 31MB for boot.ini</li>
+<li>Single <code>ext4</code> partition for rootfs</li>
+<li>Default root password is <code>odroid</code>
+</li>
+<li>Default CPU governor is <code>performance</code> (where needed)</li>
+<li>Time synchronization is disabled</li>
+</ol>
+
+<h3>
+<a id="creating-the-image" class="anchor" href="#creating-the-image" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating the image</h3>
+
+<pre><code>livemedia-creator --ks=&lt;path to kickstart&gt; --image-name=&lt;name of image file&gt; --tmp=&lt;path to output dir&gt; --keep-image --make-disk --no-virt
+</code></pre>
+
+<p>For example, to make a Fedora Minimal image for ODROID-XU:</p>
+
+<pre><code>livemedia-creator --ks=odroid-xu-minimal-ks.cfg --image-name=f21-minimal-odroid-xu.img --tmp=/root --keep-image --make-disk --no-virt
+</code></pre>
+
+<p>The resulting image will be ready to deploy when <code>livemedia-creator</code> completes.</p>
+
+<h3>
+<a id="notes" class="anchor" href="#notes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes:</h3>
+
+<ul>
+<li>Unfortunately, you'll need <code>sudo</code> access to the machine generating the image.</li>
+<li>You may see a message that says that there is <code>Not enough space in filesystems for the current software selection</code>. The kickstarts are designed to have <em>just enough</em> room to fit the packages in the list so we have smaller images to distribute. If the installation really does run out of disk space, you'll know it...</li>
+<li>This process can take at least 20 minutes, depending on the system's disk I/O performance.</li>
+<li>The console output is sporadic, so don't be surprised if you don't see any messages for 5-6 minutes straight.</li>
+<li>If things go crazy and you see lots of backtraces, it is likely that you'll need to restart the system. Sometimes lingering processes prevent dismounts, and the script doesn't handle it very well.</li>
+<li>
+<code>livemedia-creator</code> seems to have a bug if you don't set the <code>--resultdir</code> option. You can safely ignore the backtrace it generates at completion.</li>
+</ul>
+
+<h2>
+<a id="u-boot-fusing" class="anchor" href="#u-boot-fusing" aria-hidden="true"><span class="octicon octicon-link"></span></a>U-boot Fusing</h2>
+
+<h3>
+<a id="fusing-emmc" class="anchor" href="#fusing-emmc" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fusing eMMC</h3>
+
+<p>Install the odroid-{c,u,xu,xu3}-sd-fuser RPM from <a href="http://csc.mcs.sdsmt.edu/smd-odroid/fedora/linux/22/armhfp/">http://csc.mcs.sdsmt.edu/smd-odroid/fedora/linux/22/armhfp/</a></p>
+
+<p>Run the command (as root) <code>odroid-{c,u,xu,xu3}-emmc-fuser /dev/mmcblkX</code> to write the boot blob to the eMMC's boot partition. Note that you will need to be running a modern kernel which enumerates the boot partitions on an eMMC module. Unfortunately, the 3.4 kernel which is used on the ODROID-XU cannot do this. On the bright side, you don't need to be on an ARM machine at all to do this.</p>
+
+<p>It should also be noted that you can't enumerate boot partitions unless you are accessing the device over a native MMC adapter. If you're unsure, check the device that the SD card is enumerated as. It should be <code>mmcblkX</code>, not <code>sdX</code>.</p>
+
+<h3>
+<a id="fusing-anything-else-particularly-sd" class="anchor" href="#fusing-anything-else-particularly-sd" aria-hidden="true"><span class="octicon octicon-link"></span></a>Fusing anything else (particularly SD)</h3>
+
+<p>As with eMMC, install the odroid-{c,u,xu,xu3}-sd-fuser RPM from <a href="http://csc.mcs.sdsmt.edu/smd-odroid/fedora/linux/22/armhfp/">http://csc.mcs.sdsmt.edu/smd-odroid/fedora/linux/22/armhfp/</a></p>
+
+<p>Run the command <code>odroid-xu-sd-fuser /dev/mmcblkX</code>. You can fuse a raw image file without root permissions, but you'll need root to fuse any actual hardware devices.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
